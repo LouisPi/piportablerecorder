@@ -1,4 +1,4 @@
-from csv import reader
+from csv import reader, writer, QUOTE_MINIMAL
 import difflib
 import os.path
 import os
@@ -24,7 +24,8 @@ def call_external():
 
 def csv_setup():
 	select_list()
-	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + selected_file, "a+") as csvfile:
+	global csvfile
+	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + selected_file) as csvfile:
     		readCSV = reader(csvfile, delimiter=',', skipinitialspace=True)
 		global birds
 		global dates
@@ -60,18 +61,18 @@ def select_list():
 	selected_file = files[file_number]
 
 def read_list():
-	pass
+	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + selected_file, "r") as csvfile:
+		csv_reader = reader(csvfile, delimiter=",", quotechar='"')
+		for row in csv_reader:
+			print(', '.join(row))
 
 def search_list():
-		Menu().deactivate()
 		target = raw_input("What bird are you looking for? ") # Do same for date and location
 		try:
 			match = birds.index(target.lower())
 			the_date = dates[match].lower()
                         the_location = locations[match].title()
                         PrettyPrinter("{} on {} at {}".format(target, str(the_date), the_location), i, o, 5, None)
-		except KeyboardInterrupt:
-			raise
 		except:
 			best_match = difflib.get_close_matches(target.lower(), birds, 1)
                         score = difflib.SequenceMatcher(None, target, best_match).ratio()
@@ -88,14 +89,15 @@ def search_list():
 				PrettyPrinter("No match found", i, o, 5, None)
 
 def add_to_list():
-	a_bird = raw_input("Bird to add: ")
-	a_date = raw_input("Date to add: ")
-        a_location = raw_input("Location to add: ")
-	writer = csv.writer(csvfile, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL)
-	writer.writerow([a_bird, a_date, a_location])
+	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + selected_file, "a") as csvfile:
+		a_bird = raw_input("Bird to add: ")
+		a_date = raw_input("Date to add: ")
+        	a_location = raw_input("Location to add: ")
+		csv_writer = writer(csvfile, delimiter=",", quotechar='"', quoting=QUOTE_MINIMAL)
+		csv_writer.writerow([a_bird, a_date, a_location])
 
 def create_list():
-	file_name = raw_input("What would you like your list to be called? ")
+	file_name = raw_input("What would you like your list to be called? ").lower()
 	if os.path.exists("/home/piportablerecorder/ppr_gui/bird_lists/" + file_name + ".csv"):
 		print("File already exists!")
 	else:
