@@ -10,7 +10,7 @@ menu_name = "Bird Lists"  # App name as seen in main menu while using the system
 from subprocess import call
 from time import sleep
 
-from ui import Menu, Printer, PrettyPrinter, Listbox
+from ui import Menu, Printer, PrettyPrinter, Listbox, DialogBox
 
 logger = setup_logger(__name__, "info")
 
@@ -22,28 +22,16 @@ def call_external():
         Printer(["Calling external", "command"], i, o, 1)
         call(["echo", "Success"])
 
-def csv_setup():
+def load_into_dict(d):
 	select_list()
 	global csvfile
 	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + selected_file) as csvfile:
-    		readCSV = reader(csvfile, delimiter=',', skipinitialspace=True)
-		global birds
-		global dates
-		global locations
-    		birds = []
-    		dates = []
-		locations = []
-    		for row in readCSV:
-        		bird = row[0].lower()
-			date = row[1].lower()
-			location = row[2].lower()
-        		birds.append(bird)
-        		dates.append(date)
-			locations.append(location)
-
-    		print(birds)
-    		print(dates)
-		print(locations)
+		readCSV = reader(csvfile, delimiter = ',', skipinitialspace = True)
+		name = selected_file.split(".")[0]
+		d[name] = []
+		for row in readCSV:
+			if row:
+				d[name].append(row)
 
 def select_list():
 	files = []
@@ -67,26 +55,30 @@ def read_list():
 			print(', '.join(row))
 
 def search_list():
-		target = raw_input("What bird are you looking for? ") # Do same for date and location
-		try:
-			match = birds.index(target.lower())
-			the_date = dates[match].lower()
-                        the_location = locations[match].title()
-                        PrettyPrinter("{} on {} at {}".format(target, str(the_date), the_location), i, o, 5, None)
-		except:
-			best_match = difflib.get_close_matches(target.lower(), birds, 1)
-                        score = difflib.SequenceMatcher(None, target, best_match).ratio()
-                        print(score)
-			if score:
-				yes_no = raw_input("Did you mean " + best_match + "? ").lower()
-				if yes_no == "yes":
-					match = birds.index(best_match.lower())
-                        		the_date = dates[match].lower()
-                        		the_location = locations[match].title()
-                        		PrettyPrinter("{} on {} at {}".format(best_match, str(the_date), the_location), i, o, 5, None)
-
-			elif not score or yes_no != "yes":
+        target = raw_input("What bird are you looking for? ").lower() # Need to add the option to do same for date and location
+	data_values = data.values()
+	match = False
+	for value in data_values:
+		for list_item in value:
+ 			if match:
+ 				continue
+			if list_item[0].lower() == target:
+				PrettyPrinter("{} on {} at {}".format(list_item[0], str(list_item[1]), list_item[2]), i, o, 5, None)
+				match = True
+	if not match:
+		birds = [list_item[0] for value in data_values for list_item in value]
+		dates = [list_item[1] for value in data_values for list_item in value]
+		locations = [list_item[2] for value in data_values for list_item in value]
+		best_match = difflib.get_close_matches(target, birds, 1)
+		if best_match:
+			yes_no = DialogBox("yn", i, o, message = "Did you mean {}".format(best_match[0])).activate()
+			if yes_no:
+				match_index = birds.index(best_match[0])
+				PrettyPrinter("{} on {} at {}".format(best_match[0], str(dates[match_index]), str(locations[match_index])), i, o, 5, None)
+			else:
 				PrettyPrinter("No match found", i, o, 5, None)
+		else:
+			PrettyPrinter("No match found", i, o, 5, None)
 
 def add_to_list():
 	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + selected_file, "a") as csvfile:
@@ -115,7 +107,9 @@ def init_app(input, output):
         o = output  # Getting references to output and input device objects and saving them as globals
 
 def callback():
-	csv_setup()
+	global data
+	data = {}
+	load_into_dict(data)
 	menu_contents = [
 	["Read", read_list],
 	["Search", search_list],
