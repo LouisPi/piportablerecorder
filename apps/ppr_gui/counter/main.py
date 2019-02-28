@@ -22,11 +22,14 @@ callback = None
 
 i = None #Input device
 o = None #Output device
-counter = None
+counter = 0
 
-def increase_counter(start_at, num):
-        start_at += num
-	return str(start_at)
+def increase_counter(inc_by):
+	global counter
+        counter += inc_by
+
+def get_counter():
+	return str(counter)
 
 def confirm_exit():
 	choice = DialogBox("yn", i, o).activate()
@@ -41,14 +44,12 @@ def init_app(input, output):
         o = output  # Getting references to output and input device objects and saving them as globals
 
 def callback():
-	global counter
         counter = 0
+	increment_by = int(raw_input("Increase by: "))
 	keymap = {
 	"KEY_LEFT":confirm_exit,
-	"KEY_ENTER":increase_counter
+	"KEY_ENTER":lambda:increase_counter(increment_by)
 	}
-	number = int(raw_input("Increase by: "))
 	global refresher
-	refresher = Refresher(lambda:increase_counter(counter, number), i, o, 1, keymap=keymap, name="Counter")
+	refresher = Refresher(lambda:get_counter(), i, o, 1, keymap=keymap, name="Counter")
 	refresher.activate()
-	print(counter)
