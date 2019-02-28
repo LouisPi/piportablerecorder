@@ -48,6 +48,7 @@ def callback():
 	"KEY_ENTER":increase_counter
 	}
 	number = int(raw_input("Increase by: "))
-	refresher = Refresher(increase_counter(counter, number), i, o, 1, keymap, "Counter")
+	global refresher
+	refresher = Refresher(lambda:increase_counter(counter, number), i, o, 1, keymap=keymap, name="Counter")
 	refresher.activate()
 	print(counter)
