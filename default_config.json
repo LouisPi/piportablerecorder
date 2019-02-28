@@ -8,7 +8,7 @@
  "output":
  [
   {
-   "driver":"sh1106", 
+   "driver":"sh1106",
    "kwargs":
    {
     "backlight_interval":10
