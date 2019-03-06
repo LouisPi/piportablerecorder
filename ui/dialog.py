@@ -140,12 +140,10 @@ class TextView(object):
         self.o.display_data(self.el.message, self.displayed_label)
         self.o.cursor()
 
-
 class GraphicalView(TextView):
 
     def get_image(self):
         c = Canvas(self.o)
-
         #Drawing text
     	chunk_y = 0
 	formatted_message = ffs(self.el.message, self.o.cols)
@@ -168,7 +166,6 @@ class GraphicalView(TextView):
 
         #Drawing the cursor
         c.invert_rect(cursor_dims)
-
         return c.get_image()
 
     def refresh(self):
