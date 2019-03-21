@@ -24,13 +24,14 @@ def call_external():
 
 def load_into_dict(d, list):
 	for list_name in list:
-		with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + list_name) as csvfile:
-			readCSV = reader(csvfile, delimiter = ',', skipinitialspace = True)
-			name = list_name.split(".")[0]
-			d[name] = []
-			for row in readCSV:
-				if row:
-					d[name].append(row)
+		if list_name.split(".")[0] not in d:
+			with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + list_name) as csvfile:
+				readCSV = reader(csvfile, delimiter = ',', skipinitialspace = True)
+				name = list_name.split(".")[0]
+				d[name] = []
+				for row in readCSV:
+					if row:
+						d[name].append(row)
 
 # Allows the user to select a list from the bird_lists directory
 
@@ -64,22 +65,34 @@ def select_list():
 	elif amount_of_files == "all":
 		selected_files = files
 	else:
-		pass
+		pass # Need to add exit current function bit
 	return selected_files
+
+def select_data(selected_files):
+        search_keys = []
+        for file_name in selected_files:
+                        search_keys.append(file_name.split(".")[0])
+        selected_data = [data[x] for x in search_keys]
+	return selected_data
 
 # Simply reads the selected list
 
 def read_list():
-	with open("/home/pi/piportablerecorder/apps/ppr_gui/bird_lists/" + select_list(), "r") as csvfile:
-		csv_reader = reader(csvfile, delimiter=",", quotechar='"')
-		for row in csv_reader:
-			print(', '.join(row))
+	records = []
+	selected_files = select_list()
+	load_into_dict(data, selected_files)
+	for item in select_data(selected_files):
+		for record in item:
+			records.append("{} on {} at {}".format(str(record[0]), str(record[1]), str(record[2])))
+	print(records)
+        PrettyPrinter("{} and {}".format(", ".join(records[:-1]), records[-1]), i, o, 5, None)
 
 # Searches the selected list by bird, date or location and finds the closest match if there isn't a exact one when possible
 
 def search_list():
 	selected_files = select_list()
 	load_into_dict(data, selected_files)
+	data_values = select_data(selected_files)
 	target_type_contents = [
 	["Bird", 0],
 	["Date", 1],
@@ -92,10 +105,6 @@ def search_list():
                         target = raw_input("Date: ").lower()
               	else:
                         target = raw_input("Location: ").lower()
-		search_keys = []
-		for file_name in selected_files:
-			search_keys.append(file_name.split(".")[0])
-		data_values = [data[x] for x in search_keys]
 		matches = []
 		match = False
 		for value in data_values: # Need to add option to choose just one list
